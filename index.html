@@ -71,23 +71,7 @@
     .error    { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
     .duplikat { background: #fff8e1; color: #f57f17; border: 2px solid #ffe082; }
     .loading  { background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
-    .divider {
-      text-align: center; color: #aaa; font-size: 13px;
-      margin: 14px 0; position: relative;
-    }
-    .divider::before, .divider::after {
-      content: ''; position: absolute; top: 50%;
-      width: 42%; height: 1px; background: #e0e0e0;
-    }
-    .divider::before { left: 0; }
-    .divider::after { right: 0; }
-    .manual-input { display: flex; gap: 10px; }
-    .manual-input input {
-      flex: 1; padding: 12px; border: 2px solid #e0e0e0;
-      border-radius: 10px; font-size: 14px; outline: none;
-    }
-    .manual-input input:focus { border-color: #1a73e8; }
-    .btn-kirim { width: auto; margin-top: 0; padding: 12px 20px; }
+
     .kamera-status {
       font-size: 13px; color: #666;
       display: flex; align-items: center; margin-bottom: 12px;
@@ -142,12 +126,6 @@
 
   <div id="reader"></div>
   <div id="result" class="result-box"></div>
-
-  <div class="divider">atau input manual</div>
-  <div class="manual-input">
-    <input type="text" id="manualInput" placeholder="Paste / ketik data QR..." />
-    <button class="btn btn-kirim" onclick="prosesManual()">Kirim</button>
-  </div>
 </div>
 
 <div class="card rekap-box">
@@ -157,7 +135,7 @@
   <button class="toggle-btn" onclick="toggleTabel()">Lihat Detail ▾</button>
   <div id="tabelWrap" style="display:none; overflow-x:auto;">
     <table>
-      <thead><tr><th>Waktu</th><th>ID</th><th>Nama</th><th>Status</th></tr></thead>
+      <thead><tr><th>Waktu</th><th>Nama</th><th>NIM</th><th>Status</th></tr></thead>
       <tbody id="tabelBody"></tbody>
     </table>
   </div>
