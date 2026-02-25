@@ -1,1 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan QR Absensi</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a73e8, #0d47a1);
+      color: white;
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(26,115,232,0.3);
+    }
+    .header h1 { font-size: 22px; }
+    .header p { font-size: 13px; opacity: 0.85; margin-top: 5px; }
+    .card {
+      background: white;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+    .kamera-control label {
+      font-size: 13px; color: #555;
+      font-weight: 600; display: block; margin-bottom: 6px;
+    }
+    select {
+      width: 100%; padding: 10px 12px;
+      border: 2px solid #e0e0e0; border-radius: 10px;
+      font-size: 14px; outline: none; margin-bottom: 8px; background: white;
+    }
+    select:focus { border-color: #1a73e8; }
+    #reader {
+      width: 100%; border-radius: 12px;
+      overflow: hidden; background: #000; min-height: 250px;
+    }
+    .btn {
+      width: 100%; padding: 12px 20px;
+      background: #1a73e8; color: white;
+      border: none; border-radius: 10px;
+      cursor: pointer; font-size: 15px;
+      font-weight: 600; transition: 0.2s; margin-top: 8px;
+    }
+    .btn:hover { background: #1557b0; }
+    .btn-stop { background: #e53935; }
+    .btn-stop:hover { background: #b71c1c; }
+    .result-box {
+      padding: 16px; border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      text-align: center; display: none; margin-top: 12px;
+    }
+    .sukses   { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+    .error    { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
+    .duplikat { background: #fff8e1; color: #f57f17; border: 2px solid #ffe082; }
+    .loading  { background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
+    .divider {
+      text-align: center; color: #aaa; font-size: 13px;
+      margin: 14px 0; position: relative;
+    }
+    .divider::before, .divider::after {
+      content: ''; position: absolute; top: 50%;
+      width: 42%; height: 1px; background: #e0e0e0;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+    .manual-input { display: flex; gap: 10px; }
+    .manual-input input {
+      flex: 1; padding: 12px; border: 2px solid #e0e0e0;
+      border-radius: 10px; font-size: 14px; outline: none;
+    }
+    .manual-input input:focus { border-color: #1a73e8; }
+    .btn-kirim { width: auto; margin-top: 0; padding: 12px 20px; }
+    .kamera-status {
+      font-size: 13px; color: #666;
+      display: flex; align-items: center; margin-bottom: 12px;
+    }
+    .status-dot {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; margin-right: 8px; background: #ccc;
+    }
+    .status-dot.aktif { background: #4caf50; animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .rekap-box h3 { font-size: 15px; color: #555; margin-bottom: 10px; }
+    .rekap-count { font-size: 42px; font-weight: 700; color: #1a73e8; text-align: center; }
+    .rekap-label { text-align: center; color: #888; font-size: 13px; margin-bottom: 10px; }
+    .toggle-btn {
+      background: none; border: 2px solid #1a73e8; color: #1a73e8;
+      padding: 8px 16px; border-radius: 10px; cursor: pointer;
+      font-size: 13px; font-weight: 600; display: block; margin: 0 auto;
+    }
+    .toggle-btn:hover { background: #e8f0fe; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th { background: #1a73e8; color: white; padding: 8px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #eee; }
+    tr:hover td { background: #f5f5f5; }
+    .badge {
+      background: #e8f5e9; color: #2e7d32;
+      padding: 2px 8px; border-radius: 20px; font-size: 11px;
+    }
+  </style>
+</head>
+<body>
 
+<div class="header">
+  <h1>📷 Scan QR Absensi</h1>
+  <p>Arahkan kamera ke QR Code untuk absen otomatis</p>
+</div>
+
+<div class="card">
+  <div class="kamera-status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusTeks">Kamera belum aktif</span>
+  </div>
+
+  <div class="kamera-control">
+    <label>📷 Pilih Kamera:</label>
+    <select id="pilihKamera">
+      <option value="">Memuat daftar kamera...</option>
+    </select>
+    <button class="btn" id="btnAktifkan" onclick="toggleKamera()">▶ Aktifkan Kamera</button>
+  </div>
+
+  <div id="reader"></div>
+  <div id="result" class="result-box"></div>
+
+  <div class="divider">atau input manual</div>
+  <div class="manual-input">
+    <input type="text" id="manualInput" placeholder="Paste / ketik data QR..." />
+    <button class="btn btn-kirim" onclick="prosesManual()">Kirim</button>
+  </div>
+</div>
+
+<div class="card rekap-box">
+  <h3>📊 Rekap Hari Ini</h3>
+  <div class="rekap-count" id="totalHadir">-</div>
+  <div class="rekap-label">orang hadir</div>
+  <button class="toggle-btn" onclick="toggleTabel()">Lihat Detail ▾</button>
+  <div id="tabelWrap" style="display:none; overflow-x:auto;">
+    <table>
+      <thead><tr><th>Waktu</th><th>ID</th><th>Nama</th><th>Status</th></tr></thead>
+      <tbody id="tabelBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ==============================
+  // GANTI DENGAN URL APPS SCRIPT
+  // ==============================
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwa7itc5h3fYVHU78TDXLUqN6KFZBiX_0daJolEju57c3UpvOI5yCyyttK5QJODdxNH/exec';
+
+  let scanner = null;
+  let kameraAktif = false;
+  let sedangProses = false;
+
+  window.onload = function () {
+    muatRekap();
+    setInterval(muatRekap, 30000);
+
+    Html5Qrcode.getCameras().then(devices => {
+      const select = document.getElementById('pilihKamera');
+      select.innerHTML = '';
+      if (!devices || devices.length === 0) {
+        select.innerHTML = '<option value="">Tidak ada kamera ditemukan</option>';
+        return;
+      }
+      devices.forEach((cam, i) => {
+        const opt = document.createElement('option');
+        opt.value = cam.id;
+        opt.textContent = cam.label || 'Kamera ' + (i + 1);
+        select.appendChild(opt);
+      });
+      // Otomatis pilih kamera belakang
+      const backIndex = devices.findIndex(d => /back|belakang|rear|environment/i.test(d.label));
+      select.selectedIndex = backIndex >= 0 ? backIndex : devices.length - 1;
+    }).catch(err => {
+      tampilHasil('error', '❌ Tidak bisa memuat kamera: ' + err);
+    });
+  };
+
+  function toggleKamera() {
+    kameraAktif ? stopKamera() : mulaiKamera();
+  }
+
+  function mulaiKamera() {
+    const cameraId = document.getElementById('pilihKamera').value;
+    if (!cameraId) { tampilHasil('error', '❌ Pilih kamera terlebih dahulu!'); return; }
+
+    scanner = new Html5Qrcode("reader");
+    scanner.start(
+      cameraId,
+      {
+        fps: 10,
+        qrbox: function(w, h) {
+          const size = Math.min(w, h) * 0.75;
+          return { width: size, height: size };
+        }
+      },
+      (decodedText) => {
+        if (!sedangProses) {
+          sedangProses = true;
+          kirimData(decodedText);
+        }
+      },
+      () => {}
+    ).then(() => {
+      kameraAktif = true;
+      document.getElementById('btnAktifkan').textContent = '⏹ Stop Kamera';
+      document.getElementById('btnAktifkan').classList.add('btn-stop');
+      document.getElementById('statusDot').classList.add('aktif');
+      document.getElementById('statusTeks').textContent = 'Kamera aktif — arahkan ke QR Code';
+    }).catch(err => {
+      tampilHasil('error', '❌ Gagal membuka kamera. Pastikan izin kamera sudah diberikan. ' + err);
+    });
+  }
+
+  function stopKamera() {
+    if (scanner) {
+      scanner.stop().then(() => {
+        scanner = null;
+        kameraAktif = false;
+        document.getElementById('btnAktifkan').textContent = '▶ Aktifkan Kamera';
+        document.getElementById('btnAktifkan').classList.remove('btn-stop');
+        document.getElementById('statusDot').classList.remove('aktif');
+        document.getElementById('statusTeks').textContent = 'Kamera dimatikan';
+        document.getElementById('reader').innerHTML = '';
+      });
+    }
+  }
+
+  function kirimData(data) {
+    tampilHasil('loading', '⏳ Menyimpan data...');
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ qrData: data })
+    }).then(() => {
+      // no-cors tidak bisa baca response, anggap sukses
+      tampilHasil('sukses', '✅ Data berhasil dikirim! Cek Google Sheets.');
+      setTimeout(() => muatRekap(), 2000);
+      setTimeout(() => { sedangProses = false; }, 3000);
+    }).catch(err => {
+      tampilHasil('error', '❌ Gagal kirim: ' + err.message);
+      sedangProses = false;
+    });
+  }
+
+  function prosesManual() {
+    const val = document.getElementById('manualInput').value.trim();
+    if (!val) { alert('Masukkan data QR terlebih dahulu!'); return; }
+    if (!sedangProses) {
+      sedangProses = true;
+      kirimData(val);
+      document.getElementById('manualInput').value = '';
+    }
+  }
+
+  function tampilHasil(status, pesan) {
+    const el = document.getElementById('result');
+    el.className = 'result-box ' + status;
+    el.textContent = pesan;
+    el.style.display = 'block';
+    if (status === 'sukses' || status === 'duplikat') {
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+  }
+
+  function muatRekap() {
+    fetch(APPS_SCRIPT_URL)
+      .then(res => res.json())
+      .then(res => {
+        if (res.total !== undefined) {
+          document.getElementById('totalHadir').textContent = res.total;
+          const tbody = document.getElementById('tabelBody');
+          tbody.innerHTML = '';
+          (res.data || []).slice().reverse().forEach(row => {
+            tbody.innerHTML += `<tr>
+              <td>${row[0]}</td>
+              <td>${row[1]}</td>
+              <td>${row[2]}</td>
+              <td><span class="badge">${row[3]}</span></td>
+            </tr>`;
+          });
+        }
+      }).catch(() => {});
+  }
+
+  function toggleTabel() {
+    const wrap = document.getElementById('tabelWrap');
+    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+
+</body>
+</html>
