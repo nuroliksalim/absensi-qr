@@ -62,6 +62,10 @@
     .btn:hover { background: #1557b0; }
     .btn-stop { background: #e53935; }
     .btn-stop:hover { background: #b71c1c; }
+    .btn-izin {
+      background: #ff6f00;
+    }
+    .btn-izin:hover { background: #e65100; }
     .result-box {
       padding: 16px; border-radius: 12px;
       font-size: 15px; font-weight: 600;
@@ -100,6 +104,7 @@
       background: #e8f5e9; color: #2e7d32;
       padding: 2px 8px; border-radius: 20px; font-size: 11px;
     }
+    #kameraSection { display: none; }
   </style>
 </head>
 <body>
@@ -110,18 +115,28 @@
 </div>
 
 <div class="card">
-  <div class="kamera-status">
-    <span class="status-dot" id="statusDot"></span>
-    <span id="statusTeks">Kamera belum aktif</span>
+  <!-- Tombol minta izin kamera -->
+  <div id="izinSection">
+    <p style="font-size:14px; color:#555; margin-bottom:12px; text-align:center;">
+      Tekan tombol di bawah untuk mengaktifkan kamera
+    </p>
+    <button class="btn btn-izin" onclick="mintaIzinKamera()">📷 Izinkan Akses Kamera</button>
   </div>
-  <div class="kamera-control">
-    <label>📷 Pilih Kamera:</label>
-    <select id="pilihKamera">
-      <option value="">Memuat daftar kamera...</option>
-    </select>
-    <button class="btn" id="btnAktifkan" onclick="toggleKamera()">▶ Aktifkan Kamera</button>
+
+  <!-- Section kamera (muncul setelah izin diberikan) -->
+  <div id="kameraSection">
+    <div class="kamera-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusTeks">Kamera belum aktif</span>
+    </div>
+    <div class="kamera-control">
+      <label>📷 Pilih Kamera:</label>
+      <select id="pilihKamera"></select>
+      <button class="btn" id="btnAktifkan" onclick="toggleKamera()">▶ Aktifkan Kamera</button>
+    </div>
+    <div id="reader"></div>
   </div>
-  <div id="reader"></div>
+
   <div id="result" class="result-box"></div>
 </div>
 
@@ -157,7 +172,27 @@
   window.onload = function () {
     muatRekap();
     setInterval(muatRekap, 30000);
+  };
 
+  // Langkah 1: minta izin kamera dulu via getUserMedia
+  function mintaIzinKamera() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(function(stream) {
+        // Izin diberikan, hentikan stream sementara
+        stream.getTracks().forEach(track => track.stop());
+        // Sembunyikan tombol izin, tampilkan section kamera
+        document.getElementById('izinSection').style.display = 'none';
+        document.getElementById('kameraSection').style.display = 'block';
+        // Load daftar kamera
+        muatDaftarKamera();
+      })
+      .catch(function(err) {
+        tampilHasil('error', '❌ Izin kamera ditolak. Silakan izinkan kamera di pengaturan browser.');
+      });
+  }
+
+  // Langkah 2: load daftar kamera setelah izin diberikan
+  function muatDaftarKamera() {
     Html5Qrcode.getCameras().then(devices => {
       const select = document.getElementById('pilihKamera');
       select.innerHTML = '';
@@ -171,12 +206,13 @@
         opt.textContent = cam.label || 'Kamera ' + (i + 1);
         select.appendChild(opt);
       });
+      // Otomatis pilih kamera belakang
       const backIndex = devices.findIndex(d => /back|belakang|rear|environment/i.test(d.label));
       select.selectedIndex = backIndex >= 0 ? backIndex : devices.length - 1;
     }).catch(err => {
-      tampilHasil('error', '❌ Tidak bisa memuat kamera: ' + err);
+      tampilHasil('error', '❌ Gagal memuat daftar kamera: ' + err);
     });
-  };
+  }
 
   function toggleKamera() {
     kameraAktif ? stopKamera() : mulaiKamera();
