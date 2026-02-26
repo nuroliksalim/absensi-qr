@@ -184,8 +184,10 @@
 
   function mulaiKamera() {
     const cameraId = document.getElementById('pilihKamera').value;
-    if (!cameraId) { tampilHasil('error', '❌ Pilih kamera terlebih dahulu!'); return; }
-
+    if (!cameraId) {
+      tampilHasil('error', '❌ Pilih kamera terlebih dahulu!');
+      return;
+    }
     scanner = new Html5Qrcode("reader");
     scanner.start(
       cameraId,
@@ -199,6 +201,7 @@
       (decodedText) => {
         if (!sedangProses) {
           sedangProses = true;
+          bunyiBip();
           kirimData(decodedText);
         }
       },
@@ -227,23 +230,24 @@
       });
     }
   }
-  
-function bunyiBip() {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = ctx.createOscillator();
-  const gainNode = ctx.createGain();
-  oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
-  oscillator.type = 'square';
-  oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-  gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-  oscillator.start(ctx.currentTime);
-  oscillator.stop(ctx.currentTime + 0.15);
-}
+
+  function bunyiBip() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.15);
+    } catch(e) {}
+  }
 
   function kirimData(data) {
-    bunyiBip();
     tampilHasil('loading', '⏳ Menyimpan data...');
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
