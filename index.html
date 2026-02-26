@@ -53,7 +53,7 @@
       overflow: hidden; background: #000; min-height: 250px;
     }
     .btn {
-      width: 100%; padding: 12px 20px;
+      width: 100%; padding: 13px 20px;
       background: #1a73e8; color: white;
       border: none; border-radius: 10px;
       cursor: pointer; font-size: 15px;
@@ -71,7 +71,6 @@
     .error    { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
     .duplikat { background: #fff8e1; color: #f57f17; border: 2px solid #ffe082; }
     .loading  { background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
-
     .kamera-status {
       font-size: 13px; color: #666;
       display: flex; align-items: center; margin-bottom: 12px;
@@ -93,9 +92,9 @@
       font-size: 13px; font-weight: 600; display: block; margin: 0 auto;
     }
     .toggle-btn:hover { background: #e8f0fe; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-    th { background: #1a73e8; color: white; padding: 8px; text-align: left; }
-    td { padding: 8px; border-bottom: 1px solid #eee; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+    th { background: #1a73e8; color: white; padding: 8px 6px; text-align: left; }
+    td { padding: 8px 6px; border-bottom: 1px solid #eee; }
     tr:hover td { background: #f5f5f5; }
     .badge {
       background: #e8f5e9; color: #2e7d32;
@@ -115,7 +114,6 @@
     <span class="status-dot" id="statusDot"></span>
     <span id="statusTeks">Kamera belum aktif</span>
   </div>
-
   <div class="kamera-control">
     <label>📷 Pilih Kamera:</label>
     <select id="pilihKamera">
@@ -123,7 +121,6 @@
     </select>
     <button class="btn" id="btnAktifkan" onclick="toggleKamera()">▶ Aktifkan Kamera</button>
   </div>
-
   <div id="reader"></div>
   <div id="result" class="result-box"></div>
 </div>
@@ -135,17 +132,23 @@
   <button class="toggle-btn" onclick="toggleTabel()">Lihat Detail ▾</button>
   <div id="tabelWrap" style="display:none; overflow-x:auto;">
     <table>
-      <thead><tr><th>Waktu</th><th>Nama</th><th>NIM</th><th>Status</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Waktu</th>
+          <th>Nama</th>
+          <th>NIM</th>
+          <th>Prodi</th>
+          <th>Periode</th>
+          <th>Smt</th>
+        </tr>
+      </thead>
       <tbody id="tabelBody"></tbody>
     </table>
   </div>
 </div>
 
 <script>
-  // ==============================
-  // GANTI DENGAN URL APPS SCRIPT
-  // ==============================
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwa7itc5h3fYVHU78TDXLUqN6KFZBiX_0daJolEju57c3UpvOI5yCyyttK5QJODdxNH/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg_M2XG6Snz6LkffAwkBwdf4LoppPBfDbuMhCdyU5C_JrKhb813w77lVwZIAA4kjiS7A/exec';
 
   let scanner = null;
   let kameraAktif = false;
@@ -168,7 +171,6 @@
         opt.textContent = cam.label || 'Kamera ' + (i + 1);
         select.appendChild(opt);
       });
-      // Otomatis pilih kamera belakang
       const backIndex = devices.findIndex(d => /back|belakang|rear|environment/i.test(d.label));
       select.selectedIndex = backIndex >= 0 ? backIndex : devices.length - 1;
     }).catch(err => {
@@ -208,7 +210,7 @@
       document.getElementById('statusDot').classList.add('aktif');
       document.getElementById('statusTeks').textContent = 'Kamera aktif — arahkan ke QR Code';
     }).catch(err => {
-      tampilHasil('error', '❌ Gagal membuka kamera. Pastikan izin kamera sudah diberikan. ' + err);
+      tampilHasil('error', '❌ Gagal membuka kamera: ' + err);
     });
   }
 
@@ -234,7 +236,6 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ qrData: data })
     }).then(() => {
-      // no-cors tidak bisa baca response, anggap sukses
       tampilHasil('sukses', '✅ Data berhasil dikirim! Cek Google Sheets.');
       setTimeout(() => muatRekap(), 2000);
       setTimeout(() => { sedangProses = false; }, 3000);
@@ -242,16 +243,6 @@
       tampilHasil('error', '❌ Gagal kirim: ' + err.message);
       sedangProses = false;
     });
-  }
-
-  function prosesManual() {
-    const val = document.getElementById('manualInput').value.trim();
-    if (!val) { alert('Masukkan data QR terlebih dahulu!'); return; }
-    if (!sedangProses) {
-      sedangProses = true;
-      kirimData(val);
-      document.getElementById('manualInput').value = '';
-    }
   }
 
   function tampilHasil(status, pesan) {
@@ -277,7 +268,9 @@
               <td>${row[0]}</td>
               <td>${row[1]}</td>
               <td>${row[2]}</td>
-              <td><span class="badge">${row[3]}</span></td>
+              <td>${row[3]}</td>
+              <td>${row[4]}</td>
+              <td>${row[5]}</td>
             </tr>`;
           });
         }
