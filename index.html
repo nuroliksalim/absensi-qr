@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scan QR Absensi</title>
+  <title>Scan QR Ambil Kartu</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,9 +62,7 @@
     .btn:hover { background: #1557b0; }
     .btn-stop { background: #e53935; }
     .btn-stop:hover { background: #b71c1c; }
-    .btn-izin {
-      background: #ff6f00;
-    }
+    .btn-izin { background: #ff6f00; }
     .btn-izin:hover { background: #e65100; }
     .result-box {
       padding: 16px; border-radius: 12px;
@@ -110,8 +108,8 @@
 <body>
 
 <div class="header">
-  <h1>📷 Scan QR Absensi</h1>
-  <p>Arahkan kamera ke QR Code untuk absen otomatis</p>
+  <h1>🎓 Scan QR Ambil Kartu</h1>
+  <p>Arahkan kamera ke QR Code mahasiswa</p>
 </div>
 
 <div class="card">
@@ -123,7 +121,7 @@
     <button class="btn btn-izin" onclick="mintaIzinKamera()">📷 Izinkan Akses Kamera</button>
   </div>
 
-  <!-- Section kamera (muncul setelah izin diberikan) -->
+  <!-- Section kamera -->
   <div id="kameraSection">
     <div class="kamera-status">
       <span class="status-dot" id="statusDot"></span>
@@ -143,18 +141,20 @@
 <div class="card rekap-box">
   <h3>📊 Rekap Hari Ini</h3>
   <div class="rekap-count" id="totalHadir">-</div>
-  <div class="rekap-label">orang hadir</div>
+  <div class="rekap-label">mahasiswa ambil kartu</div>
   <button class="toggle-btn" onclick="toggleTabel()">Lihat Detail ▾</button>
   <div id="tabelWrap" style="display:none; overflow-x:auto;">
     <table>
       <thead>
         <tr>
           <th>Waktu</th>
-          <th>Nama</th>
           <th>NIM</th>
+          <th>Nama</th>
           <th>Prodi</th>
-          <th>Periode</th>
           <th>Smt</th>
+          <th>Kelas</th>
+          <th>TA</th>
+          <th>Ujian</th>
         </tr>
       </thead>
       <tbody id="tabelBody"></tbody>
@@ -163,7 +163,7 @@
 </div>
 
 <script>
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzg_M2XG6Snz6LkffAwkBwdf4LoppPBfDbuMhCdyU5C_JrKhb813w77lVwZIAA4kjiS7A/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxobgFdfOkgdG3ZzHIiYOawcsVKOkZIaTKaXqyx0Fkm__HLQVRS3ZOkzTWd6UbnvexkJg/exec';
 
   let scanner = null;
   let kameraAktif = false;
@@ -174,16 +174,12 @@
     setInterval(muatRekap, 30000);
   };
 
-  // Langkah 1: minta izin kamera dulu via getUserMedia
   function mintaIzinKamera() {
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       .then(function(stream) {
-        // Izin diberikan, hentikan stream sementara
         stream.getTracks().forEach(track => track.stop());
-        // Sembunyikan tombol izin, tampilkan section kamera
         document.getElementById('izinSection').style.display = 'none';
         document.getElementById('kameraSection').style.display = 'block';
-        // Load daftar kamera
         muatDaftarKamera();
       })
       .catch(function(err) {
@@ -191,7 +187,6 @@
       });
   }
 
-  // Langkah 2: load daftar kamera setelah izin diberikan
   function muatDaftarKamera() {
     Html5Qrcode.getCameras().then(devices => {
       const select = document.getElementById('pilihKamera');
@@ -206,7 +201,6 @@
         opt.textContent = cam.label || 'Kamera ' + (i + 1);
         select.appendChild(opt);
       });
-      // Otomatis pilih kamera belakang
       const backIndex = devices.findIndex(d => /back|belakang|rear|environment/i.test(d.label));
       select.selectedIndex = backIndex >= 0 ? backIndex : devices.length - 1;
     }).catch(err => {
@@ -284,14 +278,14 @@
   }
 
   function kirimData(data) {
-    tampilHasil('loading', '⏳ Menyimpan data...');
+    tampilHasil('loading', '⏳ Memproses data...');
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ qrData: data })
     }).then(() => {
-      tampilHasil('sukses', '✅ Data berhasil dikirim! Cek Google Sheets.');
+      tampilHasil('sukses', '✅ Kartu berhasil diambil! Cek Google Sheets.');
       setTimeout(() => muatRekap(), 2000);
       setTimeout(() => { sedangProses = false; }, 3000);
     }).catch(err => {
@@ -326,6 +320,8 @@
               <td>${row[3]}</td>
               <td>${row[4]}</td>
               <td>${row[5]}</td>
+              <td>${row[6]}</td>
+              <td>${row[7]}</td>
             </tr>`;
           });
         }
